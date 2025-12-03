@@ -17,12 +17,29 @@ import { configValidationSchema } from './config.schema';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
         const isProduction = configService.get('STAGE') === 'prod';
+        let sslConfig = {};
+        let extraConfig = {};
+
+        if (isProduction) {
+          sslConfig = {
+            ssl: true,
+          };
+          extraConfig = {
+            extra: {
+              ssl: {
+                rejectUnauthorized: false,
+              },
+            },
+          };
+        }
         return {
           ssl: isProduction,
           extra: {
             ssl: isProduction ? { rejectUnauthoried: false } : null,
           },
           type: 'postgres',
+          ...sslConfig,
+          ...extraConfig,
           autoLoadEntities: true,
           synchronize: true,
           host: configService.get('DB_HOST'),
