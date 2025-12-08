@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { TasksRepository } from './task.repository';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { Task } from './task.entity';
 import { GetTaskFilterDto } from './dto/get-task-filter.dto';
 import { TaskStatus } from './task-status.enum';
-import { User } from 'src/auth/user.entity';
+import { User } from '../auth/user.entity';
+import { PaginationDto } from 'src/pagination/pagination.dto';
 
 @Injectable()
 export class TasksService {
@@ -14,14 +15,16 @@ export class TasksService {
     return this.taskRepository.createTask(createTaskDto, user);
   }
 
-  async getTaskById(id: string, user: User): Promise<Task> {
-    const found = await this.taskRepository.findById(id, user);
-    if (!found) throw new NotFoundException(`Task with id ${id} not found`);
-    return found;
+  getTaskById(id: string, user: User): Promise<Task | null> {
+    return this.taskRepository.findById(id, user);
   }
 
-  getAllTasks(filterDto: GetTaskFilterDto, user: User): Promise<Task[]> {
-    return this.taskRepository.getTasks(filterDto, user);
+  getTasks(
+    filterDto: GetTaskFilterDto,
+    user: User,
+    paginationDto: PaginationDto,
+  ): Promise<{ data: Task[]; totalPages: number }> {
+    return this.taskRepository.getTasks(filterDto, user, paginationDto);
   }
 
   updateTaskStatus(id: string, status: TaskStatus, user: User): Promise<Task> {
