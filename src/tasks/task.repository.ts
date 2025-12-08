@@ -7,7 +7,7 @@ import { TaskStatus } from './task-status.enum';
 import { GetTaskFilterDto } from './dto/get-task-filter.dto';
 import { User } from '../auth/user.entity';
 import { Logger } from '@nestjs/common';
-
+import { PaginationDto } from 'src/pagination/pagination.dto';
 @Injectable()
 export class TasksRepository {
   private logger = new Logger();
@@ -28,11 +28,21 @@ export class TasksRepository {
   }
 
   async findById(id: string, user: User): Promise<Task | null> {
-    return await this.taskRepository.findOne({ where: { id, user } });
+    const task = await this.taskRepository.findOne({ where: { id, user } });
+    if (!task) {
+      throw new NotFoundException(`Task with id: ${id} not found`);
+    }
+    return task;
   }
 
-  async getTasks(filterDto: GetTaskFilterDto, user: User): Promise<Task[]> {
+  async getTasks(
+    filterDto: GetTaskFilterDto,
+    user: User,
+    paginationDto: PaginationDto,
+  ): Promise<{ data: Task[]; total: number; totalPages: number }> {
     const { status, search } = filterDto;
+    const { page, limit } = paginationDto;
+    const skip = (page - 1) * limit;
     const query = this.taskRepository.createQueryBuilder('task');
     query.where({ user });
     if (status) {
@@ -44,7 +54,10 @@ export class TasksRepository {
         { search: `%${search}%` },
       );
     }
-    return await query.getMany();
+    query.skip(skip).take(limit);
+    const [data, total] = await query.getManyAndCount();
+    const totalPages = Math.ceil(total / limit);
+    return { data, total, totalPages };
   }
 
   async updateTaskStatus(
@@ -54,7 +67,7 @@ export class TasksRepository {
   ): Promise<Task> {
     const task = await this.taskRepository.findOne({ where: { id, user } });
     if (!task) {
-      throw new NotFoundException(`Task with id ${id} not found`);
+      throw new NotFoundException(`Task with id: ${id} not found`);
     }
     task.status = status;
     await this.taskRepository.save(task);
@@ -64,7 +77,7 @@ export class TasksRepository {
   async deleteTask(id: string, user: User): Promise<void> {
     const result = await this.taskRepository.delete({ id, user });
     if (result.affected === 0) {
-      throw new NotFoundException(`Task with ${id} not found`);
+      throw new NotFoundException(`Task with id: ${id} not found`);
     }
   }
 }

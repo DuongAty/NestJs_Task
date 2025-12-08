@@ -16,6 +16,7 @@ export function TaskDocumentConfig(): Omit<OpenAPIObject, 'paths'> {
     .build();
   return taskConfig;
 }
+
 export function AuthDocumentConfig(): Omit<OpenAPIObject, 'paths'> {
   const authConfig = new DocumentBuilder()
     .setTitle('User')
@@ -23,4 +24,19 @@ export function AuthDocumentConfig(): Omit<OpenAPIObject, 'paths'> {
     .addBearerAuth()
     .build();
   return authConfig;
+}
+export function TaskDocumentV2Config(): Omit<OpenAPIObject, 'paths'> {
+  const taskv2Config = new DocumentBuilder()
+    .setTitle('Taskv2')
+    .setVersion('1.0')
+    .addBearerAuth(
+      {
+        bearerFormat: 'JWT',
+        scheme: 'Bearer',
+        type: 'http',
+      },
+      'accessToken',
+    )
+    .build();
+  return taskv2Config;
 }

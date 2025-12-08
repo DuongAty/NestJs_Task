@@ -18,6 +18,7 @@ export class UsersRepository {
     private userRepository: Repository<User>,
     private jwtService: JwtService,
   ) {}
+
   async createUser(authCredentialsDto: AuthCredentialsDto): Promise<void> {
     const { username, password } = authCredentialsDto;
     const existingUser = await this.userRepository.findOneBy({ username });
@@ -36,6 +37,7 @@ export class UsersRepository {
       throw new InternalServerErrorException();
     }
   }
+
   async signIn(
     authCredentialsDto: AuthCredentialsDto,
   ): Promise<{ accessToken: string }> {

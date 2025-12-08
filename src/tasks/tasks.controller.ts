@@ -20,6 +20,7 @@ import { GetUser } from '../auth/get-user.decorator';
 import { User } from '../auth/user.entity';
 import { Logger } from '@nestjs/common';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { PaginationDto } from 'src/pagination/pagination.dto';
 @Controller('tasks')
 @UseGuards(AuthGuard())
 @ApiBearerAuth('accessToken')
@@ -30,18 +31,22 @@ export class TasksController {
   @Version('1')
   @Get()
   getTasks(
-    @Query() filterDto: GetTaskFilterDto,
     @GetUser() user: User,
-  ): Promise<Task[]> {
+    @Query() filterDto: GetTaskFilterDto,
+    @Query() paginationDto: PaginationDto,
+  ): Promise<{ data: Task[]; totalPages: number }> {
     this.logger.verbose(
       `User "${user.username}" retrieving all task. Filter ${JSON.stringify(filterDto)}`,
     );
-    return this.tasksService.getTasks(filterDto, user);
+    return this.tasksService.getTasks(filterDto, user, paginationDto);
   }
 
   @Version('1')
   @Get('/:id')
-  getTaskbyId(@Param('id') id: string, @GetUser() user: User): Promise<Task> {
+  getTaskbyId(
+    @Param('id') id: string,
+    @GetUser() user: User,
+  ): Promise<Task | null> {
     return this.tasksService.getTaskById(id, user);
   }
 
@@ -51,6 +56,7 @@ export class TasksController {
     @Param('id') id: string,
     @GetUser() user: User,
   ): Promise<void> {
+    this.logger.verbose(`${user.username} delete a task with ID: ${id}`);
     return this.tasksService.deleteTaskById(id, user);
   }
 
@@ -65,6 +71,7 @@ export class TasksController {
     );
     return this.tasksService.createTask(createTaskDto, user);
   }
+
   @Version('1')
   @Patch('update/:id/status')
   updateTaskStatus(
@@ -73,6 +80,9 @@ export class TasksController {
     @GetUser() user: User,
   ): Promise<Task> {
     const { status } = updateTaskStatusDto;
+    this.logger.verbose(
+      `${user.username} update status task with new Data ${JSON.stringify(updateTaskStatusDto)}`,
+    );
     return this.tasksService.updateTaskStatus(id, status, user);
   }
 }
